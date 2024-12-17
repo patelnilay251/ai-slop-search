@@ -1,101 +1,133 @@
-import Image from "next/image";
+// 'use client';
+// import { useState } from 'react';
+// import SearchBar from './components/SearchBar';
+// import ResultsList from './components/ResultsList';
+
+// export default function Home() {
+
+//   const [results, setResults] = useState<any[]>([]);
+//   const [loading, setLoading] = useState(false);
+
+//   const fetchResults = async (query: string) => {
+//     setLoading(true);
+//     console.log('Searching for:', query);
+
+//     try {
+//       const response = await fetch('/api/search', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ query }),
+//       });
+
+//       //console.log('Raw response:', response);
+
+//       const data = await response.json();
+//       //console.log('Parsed data:', data);
+
+//       setResults(data.results.results || []);
+//       console.log('Final results state:', data.results.results || []);
+
+//     } catch (error) {
+//       console.error('Error details:', error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+
+//   return (
+//     <div className="max-w-4xl mx-auto p-8">
+//       <h1 className="text-3xl font-bold mb-4">AI-Slop Search</h1>
+//       <SearchBar onSearch={fetchResults} />
+//       {loading && <p className="mt-4">Loading...</p>}
+//       <ResultsList results={results} />
+//     </div>
+//   );
+// }
+
+'use client';
+import { useState, useEffect } from 'react';
+import SearchBar from './components/SearchBar';
+import ResultsList from './components/ResultsList';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const fetchResults = async (query: string) => {
+    setLoading(true);
+    console.log('Searching for:', query);
+
+    try {
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+
+      const data = await response.json();
+      setResults(data.results.results || []);
+      //console.log('Final results state:', data.results.results || []);
+    } catch (error) {
+      console.error('Error details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#0d0d1a] to-[#1c1c2e] text-white overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="light-flare"></div>
+        <div className="light-flare-2"></div>
+      </div>
+      <div className={`relative z-10 max-w-4xl mx-auto p-8 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}>
+        <div className="glassmorphism p-8 rounded-2xl">
+          <h1 className="text-4xl font-bold mb-8 text-center">AI-Slop Search</h1>
+          <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
+            <SearchBar onSearch={fetchResults} />
+          </div>
+          {loading && <p className="mt-4 text-center">Loading...</p>}
+          <ResultsList results={results} />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out forwards;
+        }
+        .glassmorphism {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+        }
+        .light-flare {
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 70%);
+          top: -150px;
+          left: -150px;
+          filter: blur(40px);
+        }
+        .light-flare-2 {
+          position: absolute;
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0) 70%);
+          bottom: -200px;
+          right: -200px;
+          filter: blur(60px);
+        }
+      `}</style>
     </div>
   );
 }
+
