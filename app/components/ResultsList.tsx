@@ -8,6 +8,8 @@ interface ResultsListProps {
         title: string;
         url: string;
         publishedDate: string;
+        author: string;
+        text: string;
     }[];
 }
 
@@ -40,6 +42,16 @@ export default function ResultsList({ results }: ResultsListProps) {
                             <p className="text-sm text-gray-300 mb-4">
                                 {result.url || 'No URL available'}
                             </p>
+                            {result.author && (
+                                <p className="text-sm text-gray-300 mb-2">
+                                    By: {result.author}
+                                </p>
+                            )}
+                            {result.text && (
+                                <p className="text-sm text-gray-300 mb-4 line-clamp-3">
+                                    {result.text}
+                                </p>
+                            )}
                             {result.publishedDate && (
                                 <p className="text-xs text-gray-400 mb-2">
                                     Published on: {new Date(result.publishedDate).toLocaleDateString()}
@@ -59,4 +71,3 @@ export default function ResultsList({ results }: ResultsListProps) {
         </motion.div>
     );
 }
-
