@@ -2,6 +2,73 @@ import { NextRequest, NextResponse } from 'next/server';
 import Exa from 'exa-js';
 import Groq from 'groq-sdk';
 
+// Types for Quantum-Fractal Clustering
+interface DataPoint {
+    original: any;
+    features: number[];
+}
+
+interface Cluster {
+    coreRepresentation: number[];
+    members: DataPoint[];
+}
+
+// Quantum-Fractal Clustering Helper Functions
+function complexExpMap(x: number): [number, number] {
+    return [Math.cos(x), Math.sin(x)];
+}
+
+function quantumEmbed(points: DataPoint[]): { complexCoordinates: [number, number][] } {
+    return {
+        complexCoordinates: points.map(p => {
+            const [re, im] = complexExpMap(p.features[0]);
+            return [re, im] as [number, number];
+        })
+    };
+}
+
+function fractalTransform(
+    embedding: { complexCoordinates: [number, number][] },
+    iterationCount: number,
+    scaleFactor: number
+): { complexCoordinates: [number, number][] } {
+    let coords = embedding.complexCoordinates;
+    for (let i = 0; i < iterationCount; i++) {
+        coords = coords.map(([x, y]) => [
+            Math.sin(y * scaleFactor) + Math.cos(x * scaleFactor),
+            Math.sin(x * scaleFactor) - Math.cos(y * scaleFactor)
+        ]);
+    }
+    return { complexCoordinates: coords };
+}
+
+function clusterResults(results: any[]): any[] {
+    // Convert results to DataPoints
+    const dataPoints: DataPoint[] = results.map(result => ({
+        original: result,
+        features: [result.score || 0]
+    }));
+
+    // Perform quantum embedding
+    const embedding = quantumEmbed(dataPoints);
+
+    // Apply fractal transformation
+    const transformed = fractalTransform(embedding, 3, 1.5);
+
+    // Group similar results based on transformed coordinates
+    const clusters: { [key: string]: any[] } = {};
+    transformed.complexCoordinates.forEach((coords, idx) => {
+        const key = `${Math.round(coords[0] * 10)},${Math.round(coords[1] * 10)}`;
+        if (!clusters[key]) clusters[key] = [];
+        clusters[key].push(results[idx]);
+    });
+
+    // Return clustered results
+    return Object.values(clusters)
+        .sort((a, b) => b.length - a.length)
+        .flat();
+}
+
 const exa = new Exa(process.env.EXA_API_KEY);
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -27,7 +94,7 @@ export async function POST(req: NextRequest) {
             type: "neural"
         });
 
-        // Step 3: Result Processing
+        // Step 3: Result Processing with Clustering
         const processedResults = exaResponse.results
             .map(result => ({
                 ...result,
@@ -35,18 +102,19 @@ export async function POST(req: NextRequest) {
                 publishedDate: result.publishedDate || new Date().toISOString()
             }))
             .sort((a, b) => b.score - a.score)
-            .slice(0, 5);
+            .slice(0, 8); // Get more results for clustering
+
+        // Apply quantum-fractal clustering
+        const clusteredResults = clusterResults(processedResults).slice(0, 5);
 
         // Step 4: Generate Summary
-        const systemPrompt = `You are a highly intelligent and concise assistant tasked with generating a clear, factual, 
-            and well-structured summary based on multiple search results. Your goal is to combine information from all the 
-            provided search results into a single, coherent, and general answer. The response must be:
+        const systemPrompt = `Summarize these search results concisely in 2-3 paragraphs. Be factual, clear, and objective.`;
 
-            1. Accurate and Trustworthy: Only include information that is factually supported by the search results provided.
-            2. Concise: Limit your response to 2-3 paragraphs (around 100-150 words) while maintaining clarity.
-            3. Well-Structured: Organize the response logically, prioritizing key information.
-            4. Neutral and Objective: Present the information impartially without bias.
-            5. Readable: Use clear, formal language that is easy to understand.`;
+        // Helper function to truncate text
+        function truncateText(text: string, maxLength: number = 250): string {
+            if (!text) return '';
+            return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+        }
 
         const summary = await groq.chat.completions.create({
             model: 'llama3-70b-8192',
@@ -54,8 +122,10 @@ export async function POST(req: NextRequest) {
                 { role: 'system', content: systemPrompt },
                 {
                     role: 'user',
-                    content: processedResults
-                        .map((result, index) => `${index + 1}. ${result.title} - ${result.url}\n${result.text}`)
+                    content: clusteredResults
+                        .map((result, index) =>
+                            `${index + 1}. ${result.title}\n${truncateText(result.text)}`
+                        )
                         .join('\n\n')
                 }
             ],
@@ -67,7 +137,7 @@ export async function POST(req: NextRequest) {
 
         // Return enhanced response
         return NextResponse.json({
-            exaResponse: { results: processedResults },
+            exaResponse: { results: clusteredResults },
             summaryData,
             refinedQuery,
             originalQuery: query
