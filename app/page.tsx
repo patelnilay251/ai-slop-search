@@ -1,60 +1,79 @@
-'use client';
-import { useState, useEffect } from 'react';
-import SearchBar from './components/SearchBar';
-import ResultsList from './components/ResultsList';
+'use client'
+import { useState, useEffect } from 'react'
+import SearchBar from './components/SearchBar'
+import ResultsList from './components/ResultsList'
+import Sidebar from './components/Sidebar'
+import { motion } from 'framer-motion'
 
 export default function Home() {
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [summary, setSummary] = useState<string>('');
+  const [results, setResults] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [summary, setSummary] = useState<string>('')
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   const fetchResults = async (query: string) => {
-    setLoading(true);
-    console.log('Searching for:', query);
+    setLoading(true)
+    console.log('Searching for:', query)
 
     try {
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
-      });
+      })
 
-      const data = await response.json();
-
-      const summaryData = data.summaryData;
-      setSummary(summaryData);
-
-      setResults(data.exaResponse.results || []);
-      console.log('Final results state:', data.exaResponse.results || []);
+      const data = await response.json()
+      setSummary(data.summaryData)
+      setResults(data.exaResponse.results || [])
+      console.log('Final results state:', data.exaResponse.results || [])
     } catch (error) {
-      console.error('Error details:', error);
+      console.error('Error details:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-auto text-white">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="light-flare"></div>
-        <div className="light-flare-2"></div>
+    <div className="w-full h-full flex overflow-hidden">
+      {/* Sidebar */}
+      <div className="fixed h-screen left-0 top-0 z-50">
+        <Sidebar />
       </div>
-      <div className="flex-1">
-        <div className={`relative z-10 max-w-4xl mx-auto p-8 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}>
-          <div className="glassmorphism p-8 rounded-2xl">
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-auto text-white relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="light-flare"></div>
+          <div className="light-flare-2"></div>
+        </div>
+        <div className="relative z-10 max-w-4xl mx-auto p-8">
+          <div className={`glassmorphism p-8 rounded-2xl ${mounted ? 'animate-fade-in' : 'opacity-0'}`}>
             <h1 className="text-4xl font-bold mb-8 text-center">AI-Slop Search</h1>
             <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
               <SearchBar onSearch={fetchResults} />
             </div>
             {loading && (
-              <div className="mt-4 flex justify-center items-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                <p className="ml-3 text-center">Loading...</p>
+              <div className="mt-4 flex flex-col items-center justify-center space-y-2">
+                <div className="flex space-x-2">
+                  {[...Array(3)].map((_, i) => (
+                    <motion.span
+                      key={i}
+                      className="block w-2 h-2 rounded-full bg-blue-500"
+                      initial={{ y: 0, opacity: 1 }}
+                      animate={{ y: [-4, 4, -4], opacity: [1, 0.5, 1] }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        repeatDelay: 0.2,
+                        delay: i * 0.15, // stagger each dot slightly
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-center text-sm text-muted-foreground">Thinking...</p>
               </div>
             )}
             {summary && (
@@ -63,11 +82,10 @@ export default function Home() {
                 <p className="text-gray-300">{summary}</p>
               </div>
             )}
-            <ResultsList results={results} />
+            <ResultsList results={results} isLoading={loading} />
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
-
